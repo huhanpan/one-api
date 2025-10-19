@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/songquanpeng/one-api/common/render"
 
@@ -33,6 +35,7 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 	common.SetEventStreamHeaders(c)
 
 	doneRendered := false
+	isFirst := true
 	for scanner.Scan() {
 		data := scanner.Text()
 		if len(data) < dataPrefixLength { // ignore blank line or wrong format
@@ -45,6 +48,16 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 			render.StringData(c, data)
 			doneRendered = true
 			continue
+		}
+		if isFirst {
+			isFirst = false
+			if requestStartTime, ok := c.Get("request_start_time"); ok {
+				if t, ok := requestStartTime.(time.Time); ok {
+					firstTokenTime := time.Since(t)
+					c.Set("first_token_time", firstTokenTime)
+					logger.SysLog(fmt.Sprintf("first token latency: %s", firstTokenTime))
+				}
+			}
 		}
 		switch relayMode {
 		case relaymode.ChatCompletions:

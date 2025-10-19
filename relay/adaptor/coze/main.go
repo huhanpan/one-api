@@ -4,19 +4,18 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/songquanpeng/one-api/common/render"
-	"io"
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common"
 	"github.com/songquanpeng/one-api/common/conv"
 	"github.com/songquanpeng/one-api/common/helper"
 	"github.com/songquanpeng/one-api/common/logger"
+	"github.com/songquanpeng/one-api/common/render"
 	"github.com/songquanpeng/one-api/relay/adaptor/coze/constant/messagetype"
 	"github.com/songquanpeng/one-api/relay/adaptor/openai"
 	"github.com/songquanpeng/one-api/relay/model"
+	"io"
+	"net/http"
+	"strings"
 )
 
 // https://www.coze.com/open
@@ -115,19 +114,9 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 	common.SetEventStreamHeaders(c)
 	var modelName string
-	isFirst := true
 
 	for scanner.Scan() {
-		if isFirst {
-                isFirst = false
-                if requestStartTime, ok := c.Get("request_start_time"); ok {
-                    if t, ok := requestStartTime.(time.Time); ok {
-                        firstTokenTime := time.Since(t)
-                        c.Set("first_token_time", firstTokenTime)
-                        logger.SysLog(fmt.Sprintf("first token latency: %s", firstTokenTime))
-                    }
-                }
-        	}
+
 		data := scanner.Text()
 		if len(data) < 5 || !strings.HasPrefix(data, "data:") {
 			continue

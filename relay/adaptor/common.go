@@ -46,7 +46,6 @@ func DoRequest(c *gin.Context, req *http.Request) (*http.Response, error) {
 	if resp == nil {
 		return nil, errors.New("resp is nil")
 	}
-	c.Set("request_start_time", time.Now())
 	_ = req.Body.Close()
 	_ = c.Request.Body.Close()
 	return resp, nil
