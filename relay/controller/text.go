@@ -82,6 +82,7 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		billing.ReturnPreConsumedQuota(ctx, preConsumedQuota, meta.TokenId)
 		return respErr
 	}
+	logger.Infof(ctx, "first token latency: %s", c.Get("first_token_time"))
 	// post-consume quota
 	go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset)
 	return nil
