@@ -86,11 +86,13 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	}
 	if ft, ok := c.Get("first_token_time"); ok {
 		logger.Infof(ctx, "first token latency: %s", ft)
+		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, ft.(time.Duration).Milliseconds())
 	} else {
 		logger.Infof(ctx, "first token latency: %v", nil)
+		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, 0)
 	}
 	// post-consume quota
-	go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset)
+
 	return nil
 }
 
