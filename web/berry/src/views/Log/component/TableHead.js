@@ -11,8 +11,7 @@ const LogTableHead = ({ userIsAdmin }) => {
         <TableCell>令牌</TableCell>
         <TableCell>类型</TableCell>
         <TableCell>模型</TableCell>
-        <TableCell>提示</TableCell>
-        <TableCell>补全</TableCell>
+        <TableCell>tokens</TableCell>
         <TableCell>首字耗时</TableCell>
         <TableCell>花费</TableCell>
         <TableCell>详情</TableCell>
