@@ -2,17 +2,17 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common/ctxkey"
 	"github.com/songquanpeng/one-api/model"
 	relay "github.com/songquanpeng/one-api/relay"
-	"github.com/songquanpeng/one-api/relay/adaptor/openai"
 	"github.com/songquanpeng/one-api/relay/apitype"
 	"github.com/songquanpeng/one-api/relay/channeltype"
 	"github.com/songquanpeng/one-api/relay/meta"
 	relaymodel "github.com/songquanpeng/one-api/relay/model"
-	"net/http"
-	"strings"
 )
 
 // https://platform.openai.com/docs/api-reference/models/list
@@ -63,42 +63,22 @@ func init() {
 		IsBlocking:         false,
 	})
 	// https://platform.openai.com/docs/models/model-endpoint-compatibility
-	for i := 0; i < apitype.Dummy; i++ {
-		if i == apitype.AIProxyLibrary {
-			continue
-		}
-		adaptor := relay.GetAdaptor(i)
-		channelName := adaptor.GetChannelName()
-		modelNames := adaptor.GetModelList()
-		for _, modelName := range modelNames {
-			models = append(models, OpenAIModels{
-				Id:         modelName,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       modelName,
-				Parent:     nil,
-			})
-		}
+
+	adaptor := relay.GetAdaptor(apitype.OpenAI)
+	channelName := adaptor.GetChannelName()
+	modelNames := adaptor.GetModelList()
+	for _, modelName := range modelNames {
+		models = append(models, OpenAIModels{
+			Id:         modelName,
+			Object:     "model",
+			Created:    1626777600,
+			OwnedBy:    channelName,
+			Permission: permission,
+			Root:       modelName,
+			Parent:     nil,
+		})
 	}
-	for _, channelType := range openai.CompatibleChannels {
-		if channelType == channeltype.Azure {
-			continue
-		}
-		channelName, channelModelList := openai.GetCompatibleChannelMeta(channelType)
-		for _, modelName := range channelModelList {
-			models = append(models, OpenAIModels{
-				Id:         modelName,
-				Object:     "model",
-				Created:    1626777600,
-				OwnedBy:    channelName,
-				Permission: permission,
-				Root:       modelName,
-				Parent:     nil,
-			})
-		}
-	}
+
 	modelsMap = make(map[string]OpenAIModels)
 	for _, model := range models {
 		modelsMap[model.Id] = model
