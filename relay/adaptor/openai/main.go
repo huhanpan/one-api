@@ -149,6 +149,14 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 		return ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError), nil
 	}
 
+	if requestStartTime, ok := c.Get("request_start_time"); ok {
+		if t, ok := requestStartTime.(time.Time); ok {
+			firstTokenTime := time.Since(t)
+			c.Set("first_token_time", firstTokenTime)
+			logger.SysLog(fmt.Sprintf("first token latency: %s", firstTokenTime))
+		}
+	}
+
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
 		completionTokens := 0
 		for _, choice := range textResponse.Choices {
