@@ -13,6 +13,7 @@ const LogTableHead = ({ userIsAdmin }) => {
         <TableCell>模型</TableCell>
         <TableCell>tokens</TableCell>
         <TableCell>首字耗时</TableCell>
+        <TableCell>生成速率</TableCell>
         <TableCell>花费</TableCell>
         <TableCell>详情</TableCell>
       </TableRow>

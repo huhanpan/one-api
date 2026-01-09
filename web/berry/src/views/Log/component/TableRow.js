@@ -56,7 +56,13 @@ export default function LogTableRow({ item, userIsAdmin }) {
         </TableCell>
           <TableCell>{`${Number(item.prompt_tokens ?? 0).toLocaleString('en-US')} → ${Number(item.completion_tokens ?? 0).toLocaleString('en-US')}`}</TableCell>
 
-        <TableCell>{item.first_token_time || '0' }</TableCell>
+        <TableCell>{item.first_token_time || '0'}</TableCell>
+        <TableCell>
+          {item.completion_tokens && item.first_token_time && item.first_token_time !== '0'
+            ? `${(item.completion_tokens / parseFloat(item.first_token_time) * 1000).toFixed(1)} T/s`
+            : ''}
+        </TableCell>
+
         <TableCell>{item.quota ? renderQuota(item.quota, 6) : ''}</TableCell>
         <TableCell>{item.content}</TableCell>
       </TableRow>
