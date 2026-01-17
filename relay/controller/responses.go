@@ -106,11 +106,13 @@ func RelayResponsesHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 
 	// read and print request body
 	var requestBytes []byte
+	requestText := ""
 	if requestBody != nil {
 		requestBytes, err = io.ReadAll(requestBody)
 		if err != nil {
 			logger.Errorf(ctx, "Failed to read request body: %s", err.Error())
 		} else {
+			requestText = string(requestBytes)
 			logger.Infof(ctx, "Request Body: %s", string(requestBytes))
 			// recreate request body for DoRequest
 			requestBody = bytes.NewReader(requestBytes)
@@ -136,12 +138,18 @@ func RelayResponsesHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 		billing.ReturnPreConsumedQuota(ctx, preConsumedQuota, meta.TokenId)
 		return respErr
 	}
+	responseText := ""
+	if rt, ok := c.Get("response_text"); ok {
+		if rtStr, ok := rt.(string); ok {
+			responseText = rtStr
+		}
+	}
 	if ft, ok := c.Get("first_token_time"); ok {
 		logger.Infof(ctx, "first token latency: %s", ft)
-		go postConsumeQuotaForResponse(ctx, usage, meta, responseRequest, ratio, preConsumedQuota, modelRatio, groupRatio, ft.(time.Duration).Milliseconds())
+		go postConsumeQuotaForResponse(ctx, usage, meta, responseRequest, ratio, preConsumedQuota, modelRatio, groupRatio, ft.(time.Duration).Milliseconds(), requestText, responseText)
 	} else {
 		logger.Infof(ctx, "first token latency: %v", nil)
-		go postConsumeQuotaForResponse(ctx, usage, meta, responseRequest, ratio, preConsumedQuota, modelRatio, groupRatio, 0)
+		go postConsumeQuotaForResponse(ctx, usage, meta, responseRequest, ratio, preConsumedQuota, modelRatio, groupRatio, 0, requestText, responseText)
 	}
 
 	return nil
@@ -210,7 +218,7 @@ func getRequestBodyForResponse(c *gin.Context, meta *meta.Meta, responseRequest 
 	return bytes.NewBuffer(requestBodyBytes), nil
 }
 
-func postConsumeQuotaForResponse(ctx context.Context, usage *relaymodel.Usage, meta *meta.Meta, responseRequest *relaymodel.ResponseRequest, ratio float64, preConsumedQuota int64, modelRatio float64, groupRatio float64, firstTokenTime int64) {
+func postConsumeQuotaForResponse(ctx context.Context, usage *relaymodel.Usage, meta *meta.Meta, responseRequest *relaymodel.ResponseRequest, ratio float64, preConsumedQuota int64, modelRatio float64, groupRatio float64, firstTokenTime int64, requestText string, responseText string) {
 	// Similar to postConsumeQuota but for Response API
 	if usage == nil {
 		logger.Error(ctx, "usage is nil, which is unexpected")
@@ -252,6 +260,8 @@ func postConsumeQuotaForResponse(ctx context.Context, usage *relaymodel.Usage, m
 		TokenName:         meta.TokenName,
 		Quota:             int(quota),
 		Content:           logContent,
+		RequestText:       requestText,
+		ResponseText:      responseText,
 		IsStream:          meta.IsStream,
 		ElapsedTime:       helper.CalcElapsedTime(meta.StartTime),
 		FirstTokenTime:    firstTokenTime,

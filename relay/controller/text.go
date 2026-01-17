@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/songquanpeng/one-api/common"
 	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/relay"
@@ -64,6 +65,10 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if err != nil {
 		return openai.ErrorWrapper(err, "convert_request_failed", http.StatusInternalServerError)
 	}
+	requestText := ""
+	if requestBytes, err := common.GetRequestBody(c); err == nil {
+		requestText = string(requestBytes)
+	}
 
 	// do request
 	c.Set("request_start_time", time.Now())
@@ -84,12 +89,18 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		billing.ReturnPreConsumedQuota(ctx, preConsumedQuota, meta.TokenId)
 		return respErr
 	}
+	responseText := ""
+	if rt, ok := c.Get("response_text"); ok {
+		if rtStr, ok := rt.(string); ok {
+			responseText = rtStr
+		}
+	}
 	if ft, ok := c.Get("first_token_time"); ok {
 		logger.Infof(ctx, "first token latency: %s", ft)
-		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, ft.(time.Duration).Milliseconds())
+		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, ft.(time.Duration).Milliseconds(), requestText, responseText)
 	} else {
 		logger.Infof(ctx, "first token latency: %v", nil)
-		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, 0)
+		go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset, 0, requestText, responseText)
 	}
 	// post-consume quota
 

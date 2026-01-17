@@ -100,6 +100,7 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 	if !doneRendered {
 		render.Done(c)
 	}
+	c.Set("response_text", responseText)
 
 	err := resp.Body.Close()
 	if err != nil {
@@ -129,6 +130,11 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 			StatusCode: resp.StatusCode,
 		}, nil
 	}
+	responseText := ""
+	for _, choice := range textResponse.Choices {
+		responseText += choice.Message.StringContent()
+	}
+	c.Set("response_text", responseText)
 	// Reset response body
 	resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
 
