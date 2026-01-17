@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
 
-import { TableRow, TableCell } from '@mui/material';
+import { TableRow, TableCell, IconButton } from '@mui/material';
 
 import { timestamp2string, renderQuota } from 'utils/common';
 import Label from 'ui-component/Label';
 import LogType from '../type/LogType';
+import { IconEye } from '@tabler/icons-react';
 
 function renderType(type) {
   const typeOption = LogType[type];
@@ -25,10 +26,10 @@ function renderType(type) {
   }
 }
 
-export default function LogTableRow({ item, userIsAdmin }) {
+export default function LogTableRow({ item, userIsAdmin, onShowDetail }) {
   return (
     <>
-      <TableRow tabIndex={item.id}>
+      <TableRow tabIndex={item.id} hover>
         <TableCell>{timestamp2string(item.created_at)}</TableCell>
 
         {userIsAdmin && <TableCell>{item.channel || ''}</TableCell>}
@@ -58,13 +59,22 @@ export default function LogTableRow({ item, userIsAdmin }) {
 
         <TableCell>{item.first_token_time || '0'}</TableCell>
         <TableCell>
-          {item.completion_tokens && item.first_token_time && item.first_token_time !== '0'
-            ? `${(item.completion_tokens / parseFloat(item.first_token_time) * 1000).toFixed(1)} T/s`
+          {Number(item.completion_tokens) > 0 && Number(item.elapsed_time) > 0
+            ? `${Math.round(((Number(item.completion_tokens) / Number(item.elapsed_time)) * 1000) * 10) / 10} T/s`
             : ''}
         </TableCell>
 
         <TableCell>{item.quota ? renderQuota(item.quota, 6) : ''}</TableCell>
-        <TableCell>{item.content}</TableCell>
+        <TableCell>
+          <IconButton
+            size="small"
+            onClick={() => onShowDetail(item)}
+            color="primary"
+            title="查看详情"
+          >
+            <IconEye size={18} />
+          </IconButton>
+        </TableCell>
       </TableRow>
     </>
   );
@@ -72,5 +82,6 @@ export default function LogTableRow({ item, userIsAdmin }) {
 
 LogTableRow.propTypes = {
   item: PropTypes.object,
-  userIsAdmin: PropTypes.bool
+  userIsAdmin: PropTypes.bool,
+  onShowDetail: PropTypes.func
 };

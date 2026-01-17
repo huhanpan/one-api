@@ -1,0 +1,1 @@
+docker buildx build --platform linux/amd64 --push -t ai.huhanpan.top/main/one-api .

@@ -14,6 +14,7 @@ import { Button, Card, Stack, Container, Typography, Box } from '@mui/material';
 import LogTableRow from './component/TableRow';
 import LogTableHead from './component/TableHead';
 import TableToolBar from './component/TableToolBar';
+import LogDetailModal from './component/LogDetailModal';
 import { API } from 'utils/api';
 import { isAdmin } from 'utils/common';
 import { ITEMS_PER_PAGE } from 'constants';
@@ -35,6 +36,8 @@ export default function Log() {
   const [searching, setSearching] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState(originalKeyword);
   const [initPage, setInitPage] = useState(true);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
   const userIsAdmin = isAdmin();
 
   const loadLogs = async (startIdx) => {
@@ -89,6 +92,18 @@ export default function Log() {
     setInitPage(true);
   };
 
+  // 处理显示详情
+  const handleShowDetail = (log) => {
+    setSelectedLog(log);
+    setDetailModalOpen(true);
+  };
+
+  // 处理关闭详情
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedLog(null);
+  };
+
   useEffect(() => {
     setSearchKeyword(originalKeyword);
     setActivePage(0);
@@ -137,7 +152,7 @@ export default function Log() {
               <LogTableHead userIsAdmin={userIsAdmin} />
               <TableBody>
                 {logs.slice(activePage * ITEMS_PER_PAGE, (activePage + 1) * ITEMS_PER_PAGE).map((row, index) => (
-                  <LogTableRow item={row} key={`${row.id}_${index}`} userIsAdmin={userIsAdmin} />
+                  <LogTableRow item={row} key={`${row.id}_${index}`} userIsAdmin={userIsAdmin} onShowDetail={handleShowDetail} />
                 ))}
               </TableBody>
             </Table>
@@ -151,6 +166,7 @@ export default function Log() {
           onPageChange={onPaginationChange}
           rowsPerPageOptions={[ITEMS_PER_PAGE]}
         />
+        <LogDetailModal open={detailModalOpen} logData={selectedLog} onClose={handleCloseDetail} />
       </Card>
     </>
   );
