@@ -44,6 +44,16 @@ const parseContent = (content) => {
   }
 };
 
+// 格式化 JSON 字符串，失败则返回原始文本
+const formatJsonText = (text) => {
+  if (text === undefined || text === null || text === '') return '无内容';
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch (e) {
+    return typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+  }
+};
+
 // 复制到剪贴板
 const copyToClipboard = async (text, onCopy) => {
   try {
@@ -113,16 +123,46 @@ const renderMessage = (msg, index) => {
 
 const LogDetailModal = ({ open, logData, onClose }) => {
   const [copiedId, setCopiedId] = useState(null);
+  const [copiedSection, setCopiedSection] = useState(null);
 
-  if (!logData) return null;
+  // 调试日志 - 组件渲染时打印
+  console.group('=== LogDetailModal Debug ===');
+  console.log('open:', open);
+  console.log('logData:', logData);
+  
+  if (!logData) {
+    console.log('❌ logData is null, returning null');
+    console.groupEnd();
+    return null;
+  }
 
   const parsedContent = parseContent(logData.content);
   const messages = parsedContent?.messages || [];
+  const requestText = logData.request_text ?? logData.requestText ?? '';
+  const responseText = logData.response_text ?? logData.responseText ?? '';
+  const formattedRequest = formatJsonText(requestText);
+  const formattedResponse = formatJsonText(responseText);
+
+  console.log('request_text:', logData.request_text);
+  console.log('requestText:', logData.requestText);
+  console.log('response_text:', logData.response_text);
+  console.log('responseText:', logData.responseText);
+  console.log('formattedRequest:', formattedRequest);
+  console.log('formattedResponse:', formattedResponse);
+  console.log('Will show section?', formattedRequest !== '无内容' || formattedResponse !== '无内容');
+  console.groupEnd();
 
   const handleCopy = (id) => {
     copyToClipboard(JSON.stringify(parsedContent, null, 2), () => {
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  const handleCopySection = (section, text) => {
+    copyToClipboard(text || '无内容', () => {
+      setCopiedSection(section);
+      setTimeout(() => setCopiedSection(null), 2000);
     });
   };
 
@@ -205,12 +245,7 @@ const LogDetailModal = ({ open, logData, onClose }) => {
                     <TableCell>{logData.quota ? renderQuota(logData.quota, 6) : '-'}</TableCell>
                   </TableRow>
                 )}
-                {logData.request_id && (
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>请求ID</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{logData.request_id}</TableCell>
-                  </TableRow>
-                )}
+               
                 {logData.is_stream !== undefined && (
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>流式</TableCell>
@@ -274,6 +309,88 @@ const LogDetailModal = ({ open, logData, onClose }) => {
             </Typography>
           )}
         </Box>
+
+        {/* 请求与响应 */}
+        {(formattedRequest !== '无内容' || formattedResponse !== '无内容') && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              请求与响应
+            </Typography>
+            
+            {/* Request */}
+            {formattedRequest !== '无内容' && (
+              <>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" gutterBottom>request_text</Typography>
+                  <Button
+                    size="small"
+                    startIcon={copiedSection === 'request' ? <IconCheck /> : <IconCopy />}
+                    onClick={() => handleCopySection('request', formattedRequest)}
+                    variant="outlined"
+                  >
+                    {copiedSection === 'request' ? '已复制' : '复制'}
+                  </Button>
+                </Box>
+                <Typography
+                  component="pre"
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    fontFamily: 'monospace',
+                    backgroundColor: '#f5f5f5',
+                    p: 2,
+                    borderRadius: 1,
+                    fontSize: '0.875rem',
+                    mb: 2,
+                    maxHeight: '400px',
+                    overflow: 'auto'
+                  }}
+                >
+                  {formattedRequest}
+                </Typography>
+              </>
+            )}
+
+            {/* Response */}
+            {formattedResponse !== '无内容' && (
+              <>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" gutterBottom>response_text</Typography>
+                  <Button
+                    size="small"
+                    startIcon={copiedSection === 'response' ? <IconCheck /> : <IconCopy />}
+                    onClick={() => handleCopySection('response', formattedResponse)}
+                    variant="outlined"
+                  >
+                    {copiedSection === 'response' ? '已复制' : '复制'}
+                  </Button>
+                </Box>
+                <Typography
+                  component="pre"
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    fontFamily: 'monospace',
+                    backgroundColor: '#f5f5f5',
+                    p: 2,
+                    borderRadius: 1,
+                    fontSize: '0.875rem',
+                    maxHeight: '400px',
+                    overflow: 'auto'
+                  }}
+                >
+                  {formattedResponse}
+                </Typography>
+              </>
+            )}
+            
+            {formattedRequest === '无内容' && formattedResponse === '无内容' && (
+              <Typography variant="body2" color="text.secondary">
+                暂无请求和响应数据
+              </Typography>
+            )}
+          </Box>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>关闭</Button>
